@@ -38,6 +38,12 @@ create policy "board photos readable" on public.photos
   for select using (show_on_board = true);
 -- email_logs, photos insert는 정책 없음 → 서버(service role)만 접근
 
+-- 권한: 새 Supabase 프로젝트는 테이블 생성 시 API 역할에 권한을 자동 부여하지 않을 수 있음
+-- (없으면 "permission denied for table ..." 오류, code 42501)
+grant usage on schema public to service_role, anon, authenticated;
+grant select, insert, update, delete on public.frames, public.photos, public.email_logs to service_role;
+grant select on public.frames, public.photos to anon, authenticated;  -- RLS 정책이 노출 범위를 제한
+
 -- 4. Storage 버킷 (Dashboard > Storage에서 만들어도 됨)
 --    frames : public, 허용 MIME image/png, image/webp (투명 영역 필요 → jpeg 제외 권장)
 --    results: public, 허용 MIME image/jpeg, image/png, image/webp, 파일 크기 10MB
