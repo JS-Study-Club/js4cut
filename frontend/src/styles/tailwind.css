@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @theme {
+  --font-sans:
+    "Pretendard Variable", "Pretendard", system-ui, -apple-system,
+    "Noto Sans KR", sans-serif;
   --animate-toast-in: toast-in 0.2s ease-out;
   @keyframes toast-in {
     from {

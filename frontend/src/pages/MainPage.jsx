@@ -1,22 +1,19 @@
-import Header from "../components/Header";
 import Hero from "../components/Hero";
-import BoardGrid from "../components/BoardGrid";
+import DriftBoard from "../components/DriftBoard";
+import Gallery from "../components/Gallery";
 import useBoardPosts from "../hooks/useBoardPosts";
 
+// 전시된 네컷이 흐릿하게 흘러가는 배경 위에, 소개 카드가 가운데에 떠 있는 홈 화면.
 export default function MainPage() {
-  const { posts, loading } = useBoardPosts();
+  const { posts } = useBoardPosts();
   return (
-    <>
-      <Header />
-      <main className="main">
+    <div className="home">
+      <DriftBoard posts={posts} />
+      <div className="home__veil" />
+      <div className="home__center">
         <Hero />
-        <section aria-labelledby="board-title">
-          <h2 id="board-title" className="board-title">
-            메인보드
-          </h2>
-          <BoardGrid posts={posts} loading={loading} />
-        </section>
-      </main>
-    </>
+      </div>
+      <Gallery posts={posts} />
+    </div>
   );
 }

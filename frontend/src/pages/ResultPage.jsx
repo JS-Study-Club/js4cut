@@ -8,6 +8,8 @@ import useComposedImage from "../hooks/useComposedImage";
 import { FRAMES } from "../lib/frames";
 import { devPhotos } from "../lib/devPhotos";
 import { sendPhotoEmail } from "../lib/api";
+import { savePost } from "../lib/board";
+import ExhibitModal from "../components/ExhibitModal";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -22,32 +24,55 @@ export default function ResultPage() {
   const [frame, setFrame] = useState(FRAMES[0]);
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
+  const [askExhibit, setAskExhibit] = useState(false);
   const { toast, hide, showSuccess, showError } = useToast();
   const { image, failed } = useComposedImage(photos, frame);
 
-  async function handleSubmit(e) {
+  // 1) 이메일 검증 → 2) 전시 동의 모달 → 3) 메일 전송(+ 동의 시 메인보드 저장)
+  function handleSubmit(e) {
     e.preventDefault();
-    const trimmed = email.trim();
-    if (!EMAIL_RE.test(trimmed)) {
+    if (!EMAIL_RE.test(email.trim())) {
       showError("올바른 이메일 주소를 입력해주세요.");
       return;
     }
     if (!image) return;
+    setAskExhibit(true);
+  }
 
+  async function finish(exhibit) {
+    setAskExhibit(false);
+    const trimmed = email.trim();
     setSending(true);
     try {
       await sendPhotoEmail({ email: trimmed, image });
-      showSuccess(`${trimmed}로 사진을 전송했어요!`);
     } catch (err) {
       showError(err.message);
-    } finally {
       setSending(false);
+      return;
     }
+    // 메일은 이미 나갔으므로, 전시 저장이 실패해도 전송 성공은 그대로 알린다.
+    if (exhibit) {
+      try {
+        await savePost(image);
+        showSuccess(`${trimmed}로 전송했고, 메인보드에도 전시했어요!`);
+      } catch {
+        showSuccess(`${trimmed}로 사진을 전송했어요. (전시 저장은 실패했어요)`);
+      }
+    } else {
+      showSuccess(`${trimmed}로 사진을 전송했어요!`);
+    }
+    setSending(false);
   }
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <Toast toast={toast} onClose={hide} />
+      <ExhibitModal
+        open={askExhibit}
+        onAgree={() => finish(true)}
+        onDecline={() => finish(false)}
+        onCancel={() => setAskExhibit(false)}
+      />
 
       <header className="border-b border-slate-100">
         <div className="mx-auto flex h-14 max-w-md items-center justify-between px-4">
