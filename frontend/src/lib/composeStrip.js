@@ -61,7 +61,7 @@ export async function composeStrip(photoSrcs, frame) {
   });
 
   ctx.fillStyle = frame.textColor;
-  ctx.font = "700 44px Pretendard, system-ui, sans-serif";
+  ctx.font = '700 44px "Pretendard Variable", Pretendard, system-ui, sans-serif';
   ctx.textAlign = "center";
   ctx.fillText("js4cut", FRAME_W / 2, FRAME_H - 70);
 

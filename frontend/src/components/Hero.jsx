@@ -5,12 +5,12 @@ export default function Hero() {
   return (
     <section className="hero">
       <h1 className="hero__title">
-        내 손안의 포토부스,
+        JS와 함께 찍는
         <br />
         우리의 네컷
       </h1>
       <p className="hero__desc">
-        프레임을 고르고, 네 장을 찍고, 메일로 받아가세요.
+        네 장을 찍고, 프레임을 고르고, 메일로 받아가세요.
       </p>
       <button className="btn btn--primary" onClick={() => navigate("/capture")}>
         시작하기

@@ -56,7 +56,7 @@ export default function CapturePage() {
     setPhase("paused");
   };
 
-  const goNext = () => navigate("/frame", { state: { photos } });
+  const goNext = () => navigate("/result", { state: { photos } });
 
   const ready = status === "ready";
 
@@ -64,15 +64,6 @@ export default function CapturePage() {
     <>
       <Header />
       <main className="capture">
-        <h1 className="capture__title">사진 찍기</h1>
-        <p className="capture__desc">
-          {phase === "done"
-            ? "마음에 들면 프레임을 고르러 가요."
-            : phase === "paused"
-              ? "준비되면 '이어하기'를 눌러 주세요."
-              : `${TOTAL_SHOTS}장을 찍어요. 한 장씩 카운트다운 후 찍혀요.`}
-        </p>
-
         <div className="stage">
           <video
             ref={videoRef}
@@ -104,44 +95,50 @@ export default function CapturePage() {
           </div>
         </div>
 
-        <ol className="shots" aria-label="찍은 사진">
-          {Array.from({ length: TOTAL_SHOTS }, (_, i) => (
-            <li key={i} className="shots__slot">
-              {photos[i] ? (
-                <img src={photos[i]} alt={`${i + 1}번째 사진`} />
-              ) : (
-                <span>{i + 1}</span>
-              )}
-            </li>
-          ))}
-        </ol>
+        <div className="capture__side">
+          <h1 className="capture__title">사진 찍기</h1>
+          <p className="capture__desc">
+            {phase === "done"
+              ? "네 장을 모두 찍었어요. 프레임을 고르러 가요."
+              : phase === "paused"
+                ? "준비되면 '이어하기'를 눌러 주세요."
+                : `${TOTAL_SHOTS}장을 찍어요. 한 장씩 카운트다운 후 찍혀요.`}
+          </p>
 
-        <div className="capture__actions">
-          {phase === "idle" && (
-            <button className="btn btn--primary" onClick={start} disabled={!ready}>
-              촬영 시작
-            </button>
-          )}
-          {phase === "counting" && (
-            <button className="btn btn--ghost" onClick={stop}>
-              중단
-            </button>
-          )}
-          {phase === "paused" && (
-            <button className="btn btn--primary" onClick={resume}>
-              이어하기
-            </button>
-          )}
-          {phase === "done" && (
-            <>
-              <button className="btn btn--ghost" onClick={start}>
-                다시 찍기
+          <ol className="shots" aria-label="찍은 사진">
+            {Array.from({ length: TOTAL_SHOTS }, (_, i) => (
+              <li key={i} className="shots__slot">
+                {photos[i] ? (
+                  <img src={photos[i]} alt={`${i + 1}번째 사진`} />
+                ) : (
+                  <span>{i + 1}</span>
+                )}
+              </li>
+            ))}
+          </ol>
+
+          <div className="capture__actions">
+            {phase === "idle" && (
+              <button className="btn btn--primary" onClick={start} disabled={!ready}>
+                촬영 시작
               </button>
+            )}
+            {phase === "counting" && (
+              <button className="btn btn--ghost" onClick={stop}>
+                중단
+              </button>
+            )}
+            {phase === "paused" && (
+              <button className="btn btn--primary" onClick={resume}>
+                이어하기
+              </button>
+            )}
+            {phase === "done" && (
               <button className="btn btn--primary" onClick={goNext}>
                 프레임 선택하기
               </button>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </main>
     </>
