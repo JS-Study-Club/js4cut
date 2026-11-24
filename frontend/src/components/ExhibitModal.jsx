@@ -2,20 +2,26 @@ import { useEffect } from "react";
 
 // 사진을 다 찍은 뒤 "메인보드에 전시할까요?"를 묻는 동의 모달.
 // onAgree: 전시 동의 / onDecline: 전시 안 함 / onCancel: 선택 없이 닫기(Esc, 바깥 클릭)
-export default function ExhibitModal({ open, onAgree, onDecline, onCancel }) {
+export default function ExhibitModal({
+  open,
+  onAgree,
+  onDecline,
+  onCancel,
+  busy = false,
+}) {
   useEffect(() => {
     if (!open) return;
-    const onKey = (e) => e.key === "Escape" && onCancel();
+    const onKey = (e) => e.key === "Escape" && !busy && onCancel();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onCancel]);
+  }, [open, onCancel, busy]);
 
   if (!open) return null;
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      onClick={onCancel}
+      onClick={busy ? undefined : onCancel}
     >
       <div
         role="dialog"
@@ -30,20 +36,22 @@ export default function ExhibitModal({ open, onAgree, onDecline, onCancel }) {
         <p className="mt-3 text-sm leading-relaxed text-slate-500">
           동의하면 완성된 네컷이 홈 화면 메인보드에 저장되고,
           <br />
-          다른 사람들에게도 보여요. (이메일 주소는 저장되지 않아요)
+          다른 사람들에게도 보여요. 이메일 주소는 공개되지 않아요.
         </p>
         <div className="mt-6 flex flex-col gap-2">
           <button
             type="button"
             autoFocus
             onClick={onAgree}
+            disabled={busy}
             className="h-12 rounded-full bg-slate-900 font-bold text-white hover:bg-black"
           >
-            네, 전시할래요
+            {busy ? "저장 중…" : "네, 전시할래요"}
           </button>
           <button
             type="button"
             onClick={onDecline}
+            disabled={busy}
             className="h-12 rounded-full border border-slate-200 font-bold text-slate-700 hover:bg-slate-50"
           >
             아니요, 메일로만 받을래요

@@ -283,6 +283,7 @@ img {
   position: absolute;
   inset: 0;
   background: #fff;
+  opacity: 0; /* 기본은 투명. 애니메이션이 꺼져도(모션 감소 설정) 카메라를 가리지 않게 */
   pointer-events: none;
   animation: flash 0.4s ease-out forwards;
 }

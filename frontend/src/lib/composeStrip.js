@@ -1,8 +1,9 @@
-import { FRAME_W, FRAME_H, SLOTS } from "./frames";
+import { FRAME_W, FRAME_H, SLOTS, OVERLAY_SLOTS } from "./frames";
 
 const loadImage = (src) =>
   new Promise((resolve, reject) => {
     const img = new Image();
+    img.crossOrigin = "anonymous"; // 서버(Supabase) 이미지를 캔버스에 그린 뒤 내보내려면 필요
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = src;
@@ -33,7 +34,11 @@ export async function composeStrip(photoSrcs, frame) {
   canvas.height = FRAME_H;
   const ctx = canvas.getContext("2d");
 
-  if (frame.src) {
+  if (frame.overlay) {
+    // 서버 프레임: 투명 칸이 있는 PNG라서 흰 바탕 → 사진 → 프레임 순서로 그린다
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, FRAME_W, FRAME_H);
+  } else if (frame.src) {
     drawCover(ctx, await loadImage(frame.src), 0, 0, FRAME_W, FRAME_H);
   } else {
     const g = ctx.createLinearGradient(0, 0, FRAME_W * 0.4, FRAME_H);
@@ -43,22 +48,30 @@ export async function composeStrip(photoSrcs, frame) {
     ctx.fillRect(0, 0, FRAME_W, FRAME_H);
   }
 
+  // 오버레이 프레임은 틈 없이 칸을 채우고(프레임이 위에서 모양을 잡는다), 색상 프레임은 둥근 칸으로 그린다
+  const slots = frame.overlay ? OVERLAY_SLOTS : SLOTS;
+  const radius = frame.overlay ? 0 : 12;
   const images = await Promise.all(
-    photoSrcs.slice(0, SLOTS.length).map(loadImage),
+    photoSrcs.slice(0, slots.length).map(loadImage),
   );
   images.forEach((img, i) => {
-    const s = SLOTS[i];
+    const s = slots[i];
     const x = s.x * FRAME_W;
     const y = s.y * FRAME_H;
     const w = s.w * FRAME_W;
     const h = s.h * FRAME_H;
     ctx.save();
     ctx.beginPath();
-    ctx.roundRect(x, y, w, h, 12);
+    ctx.roundRect(x, y, w, h, radius);
     ctx.clip();
     drawCover(ctx, img, x, y, w, h);
     ctx.restore();
   });
+
+  if (frame.overlay) {
+    drawCover(ctx, await loadImage(frame.src), 0, 0, FRAME_W, FRAME_H);
+    return canvas.toDataURL("image/jpeg", 0.92);
+  }
 
   ctx.fillStyle = frame.textColor;
   ctx.font = '700 44px "Pretendard Variable", Pretendard, system-ui, sans-serif';

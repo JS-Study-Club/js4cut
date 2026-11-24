@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import Toast from "../components/Toast";
 import FrameSwatches from "../components/FrameSwatches";
 import useToast from "../hooks/useToast";
 import useComposedImage from "../hooks/useComposedImage";
-import { FRAMES } from "../lib/frames";
+import useFrames from "../hooks/useFrames";
 import { devPhotos } from "../lib/devPhotos";
 import { sendPhotoEmail } from "../lib/api";
 import { savePost } from "../lib/board";
@@ -15,53 +15,66 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ResultPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   // 촬영 화면에서 navigate("/result", { state: { photos } }) 로 전달. 없으면 개발용 임시 사진.
   const photos = useMemo(
     () => location.state?.photos ?? devPhotos,
     [location.state],
   );
 
-  const [frame, setFrame] = useState(FRAMES[0]);
+  const { frames } = useFrames();
+  const [frameId, setFrameId] = useState(null);
+  const frame = frames.find((f) => f.id === frameId) ?? frames[0] ?? null;
+
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [askExhibit, setAskExhibit] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [saving, setSaving] = useState(false);
   const { toast, hide, showSuccess, showError } = useToast();
   const { image, failed } = useComposedImage(photos, frame);
 
-  // 1) 이메일 검증 → 2) 전시 동의 모달 → 3) 메일 전송(+ 동의 시 메인보드 저장)
-  function handleSubmit(e) {
+  function selectFrame(f) {
+    setFrameId(f.id);
+  }
+
+  // 이메일 발송이 성공한 뒤에만 전시 여부를 묻는다.
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!EMAIL_RE.test(email.trim())) {
       showError("올바른 이메일 주소를 입력해주세요.");
       return;
     }
-    if (!image) return;
-    setAskExhibit(true);
-  }
+    if (!image || !frame || emailSent) return;
 
-  async function finish(exhibit) {
-    setAskExhibit(false);
-    const trimmed = email.trim();
     setSending(true);
     try {
-      await sendPhotoEmail({ email: trimmed, image });
+      await sendPhotoEmail({ email: email.trim(), image });
+      setEmailSent(true);
+      if (frame.fromServer) {
+        setAskExhibit(true);
+      } else {
+        showSuccess("사진을 이메일로 전송했어요.");
+        navigate("/");
+      }
     } catch (err) {
       showError(err.message);
+    } finally {
       setSending(false);
-      return;
     }
-    // 메일은 이미 나갔으므로, 전시 저장이 실패해도 전송 성공은 그대로 알린다.
-    if (exhibit) {
-      try {
-        await savePost(image);
-        showSuccess(`${trimmed}로 전송했고, 메인보드에도 전시했어요!`);
-      } catch {
-        showSuccess(`${trimmed}로 사진을 전송했어요. (전시 저장은 실패했어요)`);
-      }
-    } else {
-      showSuccess(`${trimmed}로 사진을 전송했어요!`);
+  }
+
+  async function handleExhibitAgree() {
+    setSaving(true);
+    try {
+      await savePost({ image, frameId: frame.id });
+      setAskExhibit(false);
+      navigate("/");
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      setSaving(false);
     }
-    setSending(false);
   }
 
   return (
@@ -69,9 +82,10 @@ export default function ResultPage() {
       <Toast toast={toast} onClose={hide} />
       <ExhibitModal
         open={askExhibit}
-        onAgree={() => finish(true)}
-        onDecline={() => finish(false)}
-        onCancel={() => setAskExhibit(false)}
+        onAgree={handleExhibitAgree}
+        onDecline={() => navigate("/")}
+        onCancel={() => navigate("/")}
+        busy={saving}
       />
 
       <header className="border-b border-slate-100">
@@ -103,7 +117,7 @@ export default function ResultPage() {
         </div>
 
         <h2 className="mt-8 mb-3 text-sm font-bold">프레임 선택</h2>
-        <FrameSwatches value={frame} onChange={setFrame} />
+        <FrameSwatches frames={frames} value={frame} onChange={selectFrame} />
 
         <form
           onSubmit={handleSubmit}
@@ -125,10 +139,10 @@ export default function ResultPage() {
           />
           <button
             type="submit"
-            disabled={sending || !image}
+            disabled={sending || emailSent || !image}
             className="h-14 w-full rounded-full bg-slate-900 text-base font-bold text-white transition hover:bg-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {sending ? "보내는 중…" : "사진 받기"}
+            {sending ? "보내는 중…" : emailSent ? "전송 완료" : "사진 받기"}
           </button>
         </form>
       </main>

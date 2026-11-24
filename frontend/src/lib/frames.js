@@ -18,6 +18,16 @@ export const SLOTS = [
   slot(153, 210, 131, 190),
 ];
 
+// 이미지(PNG) 프레임용 사진 칸. 디자인 프레임 6종을 실측한 결과 칸이 모두 125x175(촬영 비율 5:7)이고
+// 위치 차이가 3px 이내라서 하나로 쓴다. 칸보다 2px 크게 그려 두면(프레임이 위에 덮여 가려짐) 가장자리에
+// 흰 틈이 생기지 않는다. 좌표는 300x450 프레임 기준. 칸 위치가 다른 프레임을 추가하면 여기를 조정.
+export const OVERLAY_SLOTS = [
+  slot(20, 17, 129, 183),
+  slot(150, 17, 129, 183),
+  slot(20, 198, 129, 183),
+  slot(150, 198, 129, 183),
+];
+
 // 촬영 화면에서 카메라 미리보기 비율로 쓰세요: 사진 칸과 같은 비율로 찍어야 안 잘려요.
 export const SLOT_ASPECT = 131 / 190;
 
@@ -62,8 +72,32 @@ export const FRAMES = [
   },
 ];
 
+// 서버 연결이 안 될 때 쓰는 번들 프레임 (public/frames, 사진 칸이 투명한 900x1350 PNG).
+// 서버 프레임과 달리 fromServer 가 아니라서 메인보드 전시는 할 수 없다.
+const local = (id, name, file) => ({
+  id,
+  name,
+  src: `/frames/${file}`,
+  overlay: true,
+});
+export const LOCAL_FRAMES = [
+  local("local-js", "JS", "js-yellow.png"),
+  local("local-tomato", "토마토", "tomato.png"),
+  local("local-christmas", "크리스마스", "christmas.png"),
+  local("local-yaha", "야하", "yaha-black.png"),
+  local("local-mint", "민트", "mint.png"),
+  local("local-star", "별", "star-brown.png"),
+];
+
 export const swatchStyle = (frame) =>
-  frame.src
+  frame.overlay
+    ? {
+        // 사진 칸이 투명한 프레임: 흰 바탕 위에 통째로 보여줘야 프레임 모양이 구분된다
+        backgroundColor: "#fff",
+        backgroundImage: `url(${frame.src})`,
+        backgroundSize: "100% 100%",
+      }
+    : frame.src
     ? {
         backgroundImage: `url(${frame.src})`,
         backgroundSize: "cover",
