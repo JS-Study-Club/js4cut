@@ -30,7 +30,7 @@ export default function ExhibitModal({ open, onAgree, onDecline, onCancel }) {
         <p className="mt-3 text-sm leading-relaxed text-slate-500">
           동의하면 완성된 네컷이 홈 화면 메인보드에 저장되고,
           <br />
-          다른 사람들에게도 보여요. (이메일 주소는 저장되지 않아요)
+          다른 사람들에게도 보여요. 이메일 주소는 공개되지 않아요.
         </p>
         <div className="mt-6 flex flex-col gap-2">
           <button
