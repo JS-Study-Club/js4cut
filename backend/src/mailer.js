@@ -28,8 +28,17 @@ const b64 = (buf) => Buffer.from(buf).toString('base64');
 const wrap = (s) => s.match(/.{1,76}/g)?.join('\r\n') ?? '';
 const encodeHeader = (s) => `=?UTF-8?B?${b64(s)}?=`;
 
-function buildMime({ to, subject, text, filename, mimeType, image }) {
+const MAIL_TITLE = 'JS 인생네컷 도착 💛';
+const MAIL_LINES = [
+  '저희 동아리 전시회에 참여해주셔서 감사합니다!',
+  '오늘의 인생네컷을 첨부해 보내드립니다. 즐거운 추억되셨길 바랍니다 :)',
+];
+const MAIL_TEXT = [MAIL_TITLE, '', ...MAIL_LINES].join('\n');
+const MAIL_HTML = `<h1>${MAIL_TITLE}</h1>${MAIL_LINES.map((l) => `<p>${l}</p>`).join('')}`;
+
+function buildMime({ to, subject, filename, mimeType, image }) {
   const boundary = `js4cut_${Date.now().toString(36)}`;
+  const alt = `${boundary}_alt`;
   return [
     `From: ${encodeHeader('js4cut')} <${GMAIL_USER}>`,
     `To: ${to}`,
@@ -38,10 +47,19 @@ function buildMime({ to, subject, text, filename, mimeType, image }) {
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     '',
     `--${boundary}`,
+    `Content-Type: multipart/alternative; boundary="${alt}"`,
+    '',
+    `--${alt}`,
     'Content-Type: text/plain; charset="UTF-8"',
     'Content-Transfer-Encoding: base64',
     '',
-    wrap(b64(text)),
+    wrap(b64(MAIL_TEXT)),
+    `--${alt}`,
+    'Content-Type: text/html; charset="UTF-8"',
+    'Content-Transfer-Encoding: base64',
+    '',
+    wrap(b64(MAIL_HTML)),
+    `--${alt}--`,
     `--${boundary}`,
     `Content-Type: ${mimeType}; name="${filename}"`,
     'Content-Transfer-Encoding: base64',
@@ -61,7 +79,6 @@ export async function sendPhotoMail({ to, image, ext }) {
   const raw = buildMime({
     to,
     subject: '[js4cut] 인생네컷이 도착했어요 📸',
-    text: '오늘의 인생네컷을 첨부해 보내드려요. 즐거운 추억 되세요!',
     filename: `js4cut.${ext}`,
     mimeType: ext === 'jpg' ? 'image/jpeg' : `image/${ext}`,
     image,
